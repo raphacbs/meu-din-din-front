@@ -1,0 +1,53 @@
+import { apiFetch } from "@/lib/api/client";
+import type {
+  TransactionResponse,
+  TransactionUpsertRequest,
+  TransactionGroupResponse,
+} from "@/lib/types/api";
+
+export const transactions = {
+  create: (body: TransactionUpsertRequest) =>
+    apiFetch<TransactionResponse>("/api/transactions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  list: () => apiFetch<TransactionResponse[]>("/api/transactions"),
+
+  getById: (id: string) => apiFetch<TransactionResponse>(`/api/transactions/${id}`),
+
+  extract: (from?: string, to?: string) =>
+    apiFetch<TransactionResponse[]>("/api/transactions/extract", {
+      headers: {
+        ...(from ? { "X-From-Date": from } : {}),
+        ...(to ? { "X-To-Date": to } : {}),
+      },
+    }),
+
+  update: (id: string, body: TransactionUpsertRequest) =>
+    apiFetch<TransactionResponse>(`/api/transactions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  delete: (id: string) =>
+    apiFetch<void>(`/api/transactions/${id}`, {
+      method: "DELETE",
+    }),
+
+  cancel: (id: string) =>
+    apiFetch<TransactionResponse>(`/api/transactions/${id}/cancel`, {
+      method: "POST",
+    }),
+
+  deleteInstallments: (groupId: string) =>
+    apiFetch<void>(`/api/transactions/groups/${groupId}/installments`, {
+      method: "DELETE",
+    }),
+
+  deactivateRecurrence: (groupId: string) =>
+    apiFetch<TransactionGroupResponse>(
+      `/api/transactions/groups/${groupId}/recurrence/deactivate`,
+      { method: "POST" },
+    ),
+};

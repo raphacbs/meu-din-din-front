@@ -1,0 +1,5 @@
+.next
+node_modules
+coverage
+package-lock.json
+meu-din-din-temp
