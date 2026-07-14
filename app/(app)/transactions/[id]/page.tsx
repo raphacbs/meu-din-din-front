@@ -1,11 +1,5 @@
-import { TransactionFormView } from "@/components/transactions/transaction-form-view";
+import { redirect } from "next/navigation";
 
-interface TransactionDetailPageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function TransactionDetailPage({ params }: TransactionDetailPageProps) {
-  const { id } = await params;
-
-  return <TransactionFormView transactionId={id} />;
+export default function TransactionDetailPage() {
+  redirect("/meu-mes");
 }

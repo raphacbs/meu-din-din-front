@@ -1,5 +1,5 @@
-import { TransactionFormView } from "@/components/transactions/transaction-form-view";
+import { redirect } from "next/navigation";
 
 export default function NewTransactionPage() {
-  return <TransactionFormView />;
+  redirect("/meu-mes?new=1");
 }

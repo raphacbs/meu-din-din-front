@@ -82,6 +82,19 @@ describe("validateTransactionForm", () => {
     });
   });
 
+  it("requires due date for single transactions", () => {
+    expect(
+      validateTransactionForm({
+        ...defaultTransactionFormState,
+        description: "Mercado",
+        transactionDate: "2024-07-01",
+        amountInput: "10,00",
+      }),
+    ).toMatchObject({
+      dueDate: expect.any(String),
+    });
+  });
+
   it("requires amount and due date for recurring transactions", () => {
     expect(
       validateTransactionForm({

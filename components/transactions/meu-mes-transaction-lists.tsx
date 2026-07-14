@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Empty, Grid, List, Space, Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -16,6 +15,10 @@ import {
 } from "@/components/ui/transaction-data";
 import { attachments } from "@/lib/api/attachments";
 import { formatDate } from "@/lib/format/date";
+import {
+  isPastMonthMutationBlocked,
+  useUserPreferencesStore,
+} from "@/lib/preferences/user-preferences";
 import { queryKeys } from "@/lib/query/keys";
 import { getGroupIndicator, getGroupTone } from "@/lib/transactions/labels";
 import type { TransactionResponse } from "@/lib/types/api";
@@ -28,15 +31,52 @@ interface MeuMesTransactionListsProps {
   exitingId: string | null;
   enteringId: string | null;
   onSettleSuccess: (transaction: TransactionResponse) => void;
+  onEdit: (transaction: TransactionResponse) => void;
 }
 
-function DescriptionCell({ transaction }: { transaction: TransactionResponse }) {
+function DescriptionCell({
+  transaction,
+  onEdit,
+  blocked,
+}: {
+  transaction: TransactionResponse;
+  onEdit: (transaction: TransactionResponse) => void;
+  blocked: boolean;
+}) {
   const groupIndicator = getGroupIndicator(transaction);
   const groupTone = getGroupTone(transaction.group);
 
   return (
     <div style={{ minWidth: 0 }}>
-      <Link href={`/transactions/${transaction.id}`}>{transaction.description}</Link>
+      <button
+        type="button"
+        onClick={() => {
+          if (!blocked) {
+            onEdit(transaction);
+          }
+        }}
+        disabled={blocked}
+        title={
+          blocked
+            ? "Edição de meses passados está bloqueada. Altere em Configurações."
+            : "Editar transação"
+        }
+        style={{
+          appearance: "none",
+          border: "none",
+          background: "transparent",
+          padding: 0,
+          margin: 0,
+          textAlign: "left",
+          cursor: blocked ? "not-allowed" : "pointer",
+          color: blocked ? "inherit" : "#1677ff",
+          font: "inherit",
+          textDecoration: blocked ? "none" : "underline",
+          opacity: blocked ? 0.75 : 1,
+        }}
+      >
+        {transaction.description}
+      </button>
       {groupIndicator ? (
         <Text
           type={groupTone === "muted" ? "secondary" : undefined}
@@ -69,11 +109,22 @@ export function MeuMesTransactionLists({
   exitingId,
   enteringId,
   onSettleSuccess,
+  onEdit,
 }: MeuMesTransactionListsProps) {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const [attachTarget, setAttachTarget] = useState<TransactionResponse | null>(null);
   const allItems = useMemo(() => [...pending, ...settled], [pending, settled]);
+  const hydrate = useUserPreferencesStore((state) => state.hydrate);
+  const blockPastMonthMutations = useUserPreferencesStore(
+    (state) => state.blockPastMonthMutations,
+  );
+
+  useEffect(() => {
+    void hydrate().catch(() => {
+      // Preferências já tentam hidratar no SessionProvider; default protege o gate.
+    });
+  }, [hydrate]);
 
   const attachmentQueries = useQueries({
     queries: allItems.map((transaction) => ({
@@ -91,12 +142,22 @@ export function MeuMesTransactionLists({
     return counts;
   }, [attachmentQueries, allItems]);
 
+  function isBlocked(transaction: TransactionResponse): boolean {
+    return isPastMonthMutationBlocked(transaction, { blockPastMonthMutations });
+  }
+
   function buildColumns(showSettleActions: boolean): ColumnsType<TransactionResponse> {
     const columns: ColumnsType<TransactionResponse> = [
       {
         title: "Descrição",
         key: "description",
-        render: (_, transaction) => <DescriptionCell transaction={transaction} />,
+        render: (_, transaction) => (
+          <DescriptionCell
+            transaction={transaction}
+            onEdit={onEdit}
+            blocked={isBlocked(transaction)}
+          />
+        ),
       },
       {
         title: "Valor",
@@ -147,6 +208,7 @@ export function MeuMesTransactionLists({
             transaction={transaction}
             attachmentCount={attachmentCounts[transaction.id] ?? 0}
             onAttach={setAttachTarget}
+            onEdit={onEdit}
             onSettleSuccess={showSettleActions ? onSettleSuccess : undefined}
           />
         ),
@@ -182,7 +244,11 @@ export function MeuMesTransactionLists({
           >
             <div style={{ width: "100%" }}>
               <Space align="start" style={{ width: "100%", justifyContent: "space-between" }}>
-                <DescriptionCell transaction={transaction} />
+                <DescriptionCell
+                  transaction={transaction}
+                  onEdit={onEdit}
+                  blocked={isBlocked(transaction)}
+                />
                 <CurrencyCell amount={transaction.amount} type={transaction.type} />
               </Space>
               <div style={{ marginTop: 12 }}>
@@ -199,6 +265,7 @@ export function MeuMesTransactionLists({
                   transaction={transaction}
                   attachmentCount={attachmentCounts[transaction.id] ?? 0}
                   onAttach={setAttachTarget}
+                  onEdit={onEdit}
                   onSettleSuccess={showSettleActions ? onSettleSuccess : undefined}
                 />
               </Space>

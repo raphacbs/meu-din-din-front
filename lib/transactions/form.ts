@@ -104,6 +104,13 @@ export function validateTransactionForm(state: TransactionFormState): Transactio
           ? "Informe o valor da recorrência."
           : "Informe o valor da transação.";
     }
+
+    if (!state.dueDate) {
+      errors.dueDate =
+        state.mode === "recurring"
+          ? "Informe o vencimento da recorrência."
+          : "Informe a data de vencimento.";
+    }
   }
 
   if (state.mode === "installment") {
@@ -122,10 +129,6 @@ export function validateTransactionForm(state: TransactionFormState): Transactio
   }
 
   if (state.mode === "recurring") {
-    if (!state.dueDate) {
-      errors.dueDate = "Informe o vencimento da recorrência.";
-    }
-
     const intervalCount = Number(state.intervalCount);
     if (!Number.isInteger(intervalCount) || intervalCount < 1) {
       errors.intervalCount = "Informe um intervalo válido.";
@@ -156,11 +159,12 @@ export function buildTransactionPayload(state: TransactionFormState): Transactio
   };
 
   if (state.mode === "single") {
-    if (amount === null) {
+    if (amount === null || !state.dueDate) {
       return null;
     }
 
     payload.amount = amount;
+    payload.dueDate = state.dueDate;
     return payload;
   }
 

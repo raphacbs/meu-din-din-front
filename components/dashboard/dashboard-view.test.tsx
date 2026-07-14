@@ -172,13 +172,13 @@ describe("DashboardView", () => {
     });
   });
 
-  it("links dashboard summaries to transaction detail routes", async () => {
+  it("links dashboard summaries to Meu mês", async () => {
     renderDashboard();
 
     await waitFor(() => {
       expect(screen.getByRole("link", { name: /Salário/i })).toHaveAttribute(
         "href",
-        "/transactions/tx-2",
+        "/meu-mes",
       );
     });
   });

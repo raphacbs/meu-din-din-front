@@ -35,6 +35,25 @@ Define cookie `ACCESS_TOKEN` e `XSRF-TOKEN`.
 
 ---
 
+## Preferências `/api/users/me/preferences`
+
+### `GET /api/users/me/preferences` — Autenticado
+**Response 200:**
+```json
+{ "data": { "blockPastMonthMutations": true }, "meta": {}, "links": {} }
+```
+Default `true` quando o usuário ainda não alterou.
+
+### `PUT /api/users/me/preferences` — Autenticado
+**Request:**
+```json
+{ "blockPastMonthMutations": false }
+```
+**Response 200:** mesmo shape do GET.  
+Nesta fase a API **não** enforça o gate em mutações de transações (regra no frontend).
+
+---
+
 ## Transações `/api/transactions`
 
 ### `POST /api/transactions`
@@ -87,12 +106,20 @@ Para recorrência, use `recurrence`:
 
 ### `PUT /api/transactions/{id}`
 **Request:** mesmo schema do POST.  
+`paymentDate` pode ser `null` para desfazer liquidação (status recalcula para pendente).  
 **Response 200:** `EnvelopeResponse<TransactionResponse>`
 
 ---
 
 ### `DELETE /api/transactions/{id}`
 **Response 204**
+
+---
+
+### `DELETE /api/transactions/{id}/recurrence/from-here`
+Exclui a ocorrência recorrente informada e todas as futuras do mesmo grupo (`RECORRENCIA`), ajustando a regra para não rematerializar.  
+**Response 204**  
+**Response 400:** se a transação não for de uma série recorrente.
 
 ---
 

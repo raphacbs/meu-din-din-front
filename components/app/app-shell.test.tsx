@@ -52,9 +52,11 @@ describe("AppShell accessibility", () => {
     expect(skipLink).toHaveFocus();
 
     fireEvent.keyDown(skipLink, { key: "Tab" });
-    expect(screen.getByRole("link", { name: "Nova transação" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Meu mês" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Configurações" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Nova transação" })).not.toBeInTheDocument();
   });
 
   it("calls logout when the user clicks Sair", async () => {

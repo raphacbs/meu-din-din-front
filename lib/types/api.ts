@@ -109,6 +109,11 @@ export interface AttachmentResponse {
   fileSize: number;
 }
 
+// --- User preferences ---
+export interface UserPreferencesResponse {
+  blockPastMonthMutations: boolean;
+}
+
 // --- Projections ---
 export interface ProjectionResponse {
   projectedBalance: number;

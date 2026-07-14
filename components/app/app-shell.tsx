@@ -121,12 +121,9 @@ export function AppShell({ children }: AppShellProps) {
             padding: "0 24px",
             background: "#ffffff",
             borderBottom: "1px solid #d7ded8",
+            height: 64,
           }}
-        >
-          <Link href="/transactions/new">
-            <Button type="primary">Nova transação</Button>
-          </Link>
-        </Header>
+        />
 
         <Content
           id="main-content"

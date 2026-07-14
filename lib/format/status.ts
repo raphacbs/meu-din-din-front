@@ -11,30 +11,27 @@ const STATUS_LABELS: Record<TransactionStatus, string> = {
 
 export type StatusTone = "default" | "success" | "warning" | "danger" | "muted";
 
-/** Cores semânticas do `antd Tag` por status de transação. */
-export type TransactionStatusColor =
-  | "processing"
-  | "warning"
-  | "error"
-  | "success"
-  | "cyan"
-  | "default";
+/** Cor do `antd Tag` por status (preset ou hex customizado). */
+export type TransactionStatusColor = string;
 
 const STATUS_TONES: Record<TransactionStatus, StatusTone> = {
   A_VENCER: "default",
   VENCE_HOJE: "warning",
   ATRASADA: "danger",
   PAGO: "success",
-  PAGO_COM_ATRASO: "success",
+  PAGO_COM_ATRASO: "danger",
   CANCELADA: "muted",
 };
+
+/** Vermelho claro — distinto de `error` (ATRASADA) e de `success` (PAGO). */
+export const PAGO_COM_ATRASO_COLOR = "#f87171";
 
 const STATUS_COLORS: Record<TransactionStatus, TransactionStatusColor> = {
   A_VENCER: "processing",
   VENCE_HOJE: "warning",
   ATRASADA: "error",
   PAGO: "success",
-  PAGO_COM_ATRASO: "cyan",
+  PAGO_COM_ATRASO: PAGO_COM_ATRASO_COLOR,
   CANCELADA: "default",
 };
 

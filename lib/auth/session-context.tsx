@@ -19,6 +19,7 @@ import {
   readStoredSession,
   writeStoredSession,
 } from "@/lib/auth/session-storage";
+import { useUserPreferencesStore } from "@/lib/preferences/user-preferences";
 import type { SessionResponse } from "@/lib/types/api";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
@@ -79,6 +80,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (isAuthenticated) {
           setUser(storedSession);
           setStatus("authenticated");
+          void useUserPreferencesStore.getState().hydrate().catch(() => {
+            // Gates usam default até a tela de configurações tentar de novo.
+          });
           return;
         }
 
@@ -93,6 +97,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (storedSession) {
           setUser(storedSession);
           setStatus("authenticated");
+          void useUserPreferencesStore.getState().hydrate().catch(() => {
+            // Gates usam default até a tela de configurações tentar de novo.
+          });
           return;
         }
 
@@ -111,6 +118,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     writeStoredSession(session);
     setUser(session);
     setStatus("authenticated");
+    void useUserPreferencesStore.getState().hydrate().catch(() => {
+      // Gates usam default até a tela de configurações tentar de novo.
+    });
   }, []);
 
   const logout = useCallback(async () => {

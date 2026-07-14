@@ -177,11 +177,15 @@ export function TransactionForm({
             <Form.Item
               name="dueDate"
               label="Vencimento"
-              rules={
-                mode === "recurring"
-                  ? [{ required: true, message: "Informe o vencimento da recorrência." }]
-                  : []
-              }
+              rules={[
+                {
+                  required: true,
+                  message:
+                    mode === "recurring"
+                      ? "Informe o vencimento da recorrência."
+                      : "Informe a data de vencimento.",
+                },
+              ]}
             >
               <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
             </Form.Item>

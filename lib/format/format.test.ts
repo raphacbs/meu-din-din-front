@@ -59,7 +59,7 @@ describe("formatTransactionStatus", () => {
     expect(getTransactionStatusColor("VENCE_HOJE")).toBe("warning");
     expect(getTransactionStatusColor("ATRASADA")).toBe("error");
     expect(getTransactionStatusColor("PAGO")).toBe("success");
-    expect(getTransactionStatusColor("PAGO_COM_ATRASO")).toBe("cyan");
+    expect(getTransactionStatusColor("PAGO_COM_ATRASO")).toBe("#f87171");
     expect(getTransactionStatusColor("CANCELADA")).toBe("default");
   });
 });

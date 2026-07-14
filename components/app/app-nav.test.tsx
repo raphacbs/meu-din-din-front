@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppNav } from "@/components/app/app-nav";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/transactions",
+  usePathname: () => "/meu-mes",
 }));
 
 describe("AppNav", () => {
@@ -20,17 +20,18 @@ describe("AppNav", () => {
       "href",
       "/dashboard",
     );
-    expect(screen.getByRole("link", { name: "Transações" })).toHaveAttribute(
-      "href",
-      "/transactions",
-    );
     expect(screen.getByRole("link", { name: "Meu mês" })).toHaveAttribute("href", "/meu-mes");
+    expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(screen.queryByRole("link", { name: "Transações" })).not.toBeInTheDocument();
   });
 
   it("marks the active route with aria-current", () => {
     render(<AppNav />);
 
-    expect(screen.getByRole("link", { name: "Transações" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Meu mês" })).toHaveAttribute(
       "aria-current",
       "page",
     );

@@ -64,6 +64,10 @@ import { usePeriodStore } from "@/lib/stores/period-store";
 vi.mock("@/lib/api/transactions", () => ({
   transactions: {
     extract: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    deleteRecurrenceFromHere: vi.fn(),
   },
 }));
 
@@ -102,8 +106,8 @@ describe("MeuMesView", () => {
         type: "DESPESA",
         amount: 80,
         description: "Mercado",
-        transactionDate: "2024-07-01",
-        dueDate: "2024-07-10",
+        transactionDate: dayjs().date(1).format("YYYY-MM-DD"),
+        dueDate: dayjs().date(10).format("YYYY-MM-DD"),
         status: "A_VENCER",
       },
       {
@@ -111,9 +115,9 @@ describe("MeuMesView", () => {
         type: "RECEITA",
         amount: 500,
         description: "Salário",
-        transactionDate: "2024-07-05",
+        transactionDate: dayjs().date(5).format("YYYY-MM-DD"),
         status: "PAGO",
-        paymentDate: "2024-07-05",
+        paymentDate: dayjs().date(5).format("YYYY-MM-DD"),
       },
     ]);
   });
@@ -150,7 +154,7 @@ describe("MeuMesView", () => {
     vi.mocked(transactions.extract).mockClear();
     replaceMock.mockClear();
 
-    fireEvent.change(screen.getByLabelText("Selecionar mês"), {
+    fireEvent.change(screen.getByLabelText("Selecionar mês", { selector: "input" }), {
       target: { value: "2024-07" },
     });
 
@@ -181,6 +185,21 @@ describe("MeuMesView", () => {
       expect(screen.getByText("Pendentes")).toBeInTheDocument();
       expect(screen.getByText("Liquidados")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Quitar" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Nova transação/i })).toBeInTheDocument();
+    });
+  });
+
+  it("opens create drawer from hero CTA", async () => {
+    renderMeuMesView();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Nova transação/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Nova transação/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Criar transação" })).toBeInTheDocument();
     });
   });
 

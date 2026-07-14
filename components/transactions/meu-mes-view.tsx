@@ -8,14 +8,20 @@ import dayjs from "dayjs";
 
 import { MeuMesHero } from "@/components/transactions/meu-mes-hero";
 import { MeuMesTransactionLists } from "@/components/transactions/meu-mes-transaction-lists";
+import { TransactionFormDrawer } from "@/components/transactions/transaction-form-drawer";
 import { transactions } from "@/lib/api/transactions";
 import { ApiError } from "@/lib/api/client";
+import {
+  isPastMonthMutationBlocked,
+  useUserPreferencesStore,
+} from "@/lib/preferences/user-preferences";
 import { inferPeriodMode, monthRange } from "@/lib/period/date-range";
 import { parsePeriodSearchParams, replacePeriodInUrl } from "@/lib/period/url";
 import { queryKeys } from "@/lib/query/keys";
 import { usePeriodStore } from "@/lib/stores/period-store";
 import {
   calculateMeuMesSummary,
+  calculateTagShares,
   splitMeuMesLists,
 } from "@/lib/transactions/totals";
 import type { TransactionResponse } from "@/lib/types/api";
@@ -51,12 +57,26 @@ export function MeuMesView() {
   const [exitingId, setExitingId] = useState<string | null>(null);
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [heroPulse, setHeroPulse] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionResponse | null>(
+    null,
+  );
   const timersRef = useRef<number[]>([]);
 
   const draft = usePeriodStore((state) => state.draft);
   const applied = usePeriodStore((state) => state.applied);
   const applyMonth = usePeriodStore((state) => state.applyMonth);
   const applyCurrentMonthDefault = usePeriodStore((state) => state.applyCurrentMonthDefault);
+  const hydratePrefs = useUserPreferencesStore((state) => state.hydrate);
+  const blockPastMonthMutations = useUserPreferencesStore(
+    (state) => state.blockPastMonthMutations,
+  );
+
+  useEffect(() => {
+    void hydratePrefs().catch(() => {
+      // Preferências já tentam hidratar no SessionProvider; default protege o gate.
+    });
+  }, [hydratePrefs]);
 
   useEffect(() => {
     const parsed = parsePeriodSearchParams(searchParams);
@@ -86,6 +106,21 @@ export function MeuMesView() {
   }, []);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    if (searchParams.get("new") === "1") {
+      setDrawerMode("create");
+      setEditingTransaction(null);
+      const next = new URLSearchParams(searchParams.toString());
+      next.delete("new");
+      const query = next.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }
+  }, [hydrated, searchParams, pathname, router]);
+
+  useEffect(() => {
     return () => {
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
     };
@@ -105,10 +140,32 @@ export function MeuMesView() {
     () => calculateMeuMesSummary(meuMesQuery.data ?? []),
     [meuMesQuery.data],
   );
+  const tagShares = useMemo(
+    () => calculateTagShares(meuMesQuery.data ?? []),
+    [meuMesQuery.data],
+  );
 
   function handleMonthChange(year: number, month: number) {
     const range = applyMonth(year, month);
     replacePeriodInUrl(router, pathname, range.from, range.to);
+  }
+
+  function openCreate() {
+    setEditingTransaction(null);
+    setDrawerMode("create");
+  }
+
+  function openEdit(transaction: TransactionResponse) {
+    if (isPastMonthMutationBlocked(transaction, { blockPastMonthMutations })) {
+      return;
+    }
+    setEditingTransaction(transaction);
+    setDrawerMode("edit");
+  }
+
+  function closeDrawer() {
+    setDrawerMode(null);
+    setEditingTransaction(null);
   }
 
   async function invalidateAfterSettle() {
@@ -154,8 +211,10 @@ export function MeuMesView() {
         year={draft.year}
         month={draft.month}
         summary={hydrated ? summary : null}
+        tagShares={hydrated && hasActiveItems ? tagShares : []}
         pulse={heroPulse}
         onMonthChange={handleMonthChange}
+        onCreate={openCreate}
       />
 
       {!hydrated || !applied || meuMesQuery.isLoading ? (
@@ -169,7 +228,14 @@ export function MeuMesView() {
           extra={<Button onClick={() => void meuMesQuery.refetch()}>Tentar novamente</Button>}
         />
       ) : !hasActiveItems ? (
-        <Empty description="Nenhuma movimentação neste mês." />
+        <Empty
+          description="Nenhuma movimentação neste mês."
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        >
+          <Button type="primary" onClick={openCreate}>
+            Nova transação
+          </Button>
+        </Empty>
       ) : (
         <MeuMesTransactionLists
           pending={lists.pending}
@@ -177,8 +243,16 @@ export function MeuMesView() {
           exitingId={exitingId}
           enteringId={enteringId}
           onSettleSuccess={handleSettleSuccess}
+          onEdit={openEdit}
         />
       )}
+
+      <TransactionFormDrawer
+        open={drawerMode !== null}
+        mode={drawerMode === "edit" ? "edit" : "create"}
+        transaction={editingTransaction}
+        onClose={closeDrawer}
+      />
     </Space>
   );
 }

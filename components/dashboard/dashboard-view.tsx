@@ -64,7 +64,7 @@ export function DashboardView() {
             Visão do caderno de caixa com saldo projetado, vencimentos e movimentações recentes.
           </Paragraph>
         </div>
-        <Link href="/transactions/new">
+        <Link href="/meu-mes?new=1">
           <Button type="primary">Nova transação</Button>
         </Link>
       </Space>

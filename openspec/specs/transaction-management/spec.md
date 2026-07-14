@@ -7,30 +7,33 @@ Gestão de transações financeiras no frontend: listagem, formulários, ações
 ## Requirements
 
 ### Requirement: User can view transactions
-O frontend SHALL exibir dados autenticados de transações de `GET /api/transactions`. A visão operacional do mês (anteriormente extrato) SHALL ser a tela Meu mês descrita na capability `meu-mes`, usando `GET /api/transactions/extract` com o intervalo do mês selecionado.
+O frontend SHALL tratar Meu mês (`/meu-mes` + `GET /api/transactions/extract`) como a visão operacional de listagem. A rota `/transactions` NÃO SHALL ser oferecida na navegação; acessos a `/transactions`, `/transactions/new` e `/transactions/[id]` SHALL redirecionar para `/meu-mes`.
 
-#### Scenario: Transaction list loads
-- **WHEN** an authenticated user opens the transactions screen
-- **THEN** the frontend requests `/api/transactions` with `credentials: include`
-- **AND** the frontend displays each transaction description, amount, type, date, due date when present, status, tags, and group indicators when present
+#### Scenario: Rotas legadas redirecionam
+- **WHEN** um usuário autenticado navega para `/transactions`, `/transactions/new` ou `/transactions/[id]`
+- **THEN** o frontend redireciona para `/meu-mes`
 
-#### Scenario: Empty transaction list
-- **WHEN** the transaction list response contains no transactions
-- **THEN** the frontend displays an empty state that explains there are no transactions yet
-- **AND** the frontend offers an action to create a transaction
+#### Scenario: Visão operacional é Meu mês
+- **WHEN** o usuário precisa ver e operar transações do mês
+- **THEN** o frontend usa a tela Meu mês e o extract do intervalo selecionado
 
 ### Requirement: User can create and edit transactions
-O frontend SHALL fornecer formulários para criar e editar transações de receita e despesa usando `antd Form` com `Form.useForm()`, SHALL usar `CurrencyInput` para campos de valor monetário, `TagSelect` para seleção de tags, e `antd InputNumber` para campos de quantidade. O frontend SHALL enviar `amount` válido para todo cadastro de transação.
+O frontend SHALL fornecer formulários para criar e editar transações de receita e despesa usando `antd Form` com `Form.useForm()` dentro de um `antd Drawer` na tela Meu mês, SHALL usar `CurrencyInput` para campos de valor monetário, `TagSelect` para seleção de tags, e `antd InputNumber` para campos de quantidade. O frontend SHALL enviar `amount` válido para todo cadastro de transação. No modo avulso e no modo recorrente, o frontend SHALL exigir `dueDate` (vencimento) tanto para `DESPESA` quanto para `RECEITA` na criação e na edição. O frontend NÃO SHALL depender de páginas dedicadas `/transactions/new` ou `/transactions/[id]` como fluxo principal.
 
 #### Scenario: Create single transaction
-- **WHEN** an authenticated user submits a valid single transaction form with type, amount, description, transaction date, optional due date, optional payment date, and optional tags
-- **THEN** the frontend sends `POST /api/transactions` with type, amount greater than zero, description, transaction date, optional due date, optional payment date, optional tags, and no installment or recurrence object
-- **AND** the frontend refreshes transaction data after success
+- **WHEN** an authenticated user submits a valid single transaction form with type, amount, description, transaction date, due date, optional payment date, and optional tags
+- **THEN** the frontend sends `POST /api/transactions` with type, amount greater than zero, description, transaction date, due date, optional payment date, optional tags, and no installment or recurrence object
+- **AND** the frontend refreshes Meu mês extract data after success
+
+#### Scenario: Reject single transaction without due date
+- **WHEN** the user submits a single (avulso) transaction form without due date, for either `DESPESA` or `RECEITA`
+- **THEN** the frontend blocks submit and shows a validation error on the due date field
+- **AND** the frontend does not call the transactions API
 
 #### Scenario: Edit transaction
-- **WHEN** an authenticated user submits changes for an existing transaction
-- **THEN** the frontend sends `PUT /api/transactions/{id}` with the updated transaction payload including a valid amount
-- **AND** the frontend displays the updated transaction after success
+- **WHEN** an authenticated user submits changes for an existing transaction from the Meu mês Drawer
+- **THEN** the frontend sends `PUT /api/transactions/{id}` with the updated transaction payload including a valid amount and due date
+- **AND** the frontend displays the updated transaction after success in Meu mês
 
 #### Scenario: Validation error
 - **WHEN** the backend rejects a transaction mutation with `400`
@@ -68,19 +71,30 @@ O frontend SHALL permitir que o usuário escolha entre os modos avulso, parcelad
 - **AND** the frontend removes the affected installments from the visible list after success
 
 ### Requirement: User can cancel and delete transactions
-The frontend SHALL support cancellation and deletion actions using `antd Modal.confirm` for confirmation before destructive changes.
+The frontend SHALL support deletion (and cancellation when applicable) using `antd Modal` confirmation before destructive changes, primarily from Meu mês row actions. Deletion of a recurrence occurrence SHALL offer scope “only this” versus “this and future” when `group.type` is `RECORRENCIA`. When `group.type` is `PARCELAMENTO`, the frontend SHALL delete the entire installment group (all installments, including previous and settled ones), SHALL warn the user explicitly in the confirmation modal, and SHALL NOT offer a “only this installment” option.
+
+#### Scenario: Delete single transaction
+- **WHEN** an authenticated user triggers deletion for a transaction without installment group (`PARCELAMENTO`) from Meu mês
+- **THEN** the frontend shows confirmation requesting confirmation
+- **AND** upon confirmation the frontend calls `DELETE /api/transactions/{id}` for single-occurrence scope
+- **AND** the frontend removes the transaction from the current view after success
+
+#### Scenario: Delete installment group from Meu mês
+- **WHEN** the user triggers deletion for a transaction whose `group.type` is `PARCELAMENTO`
+- **THEN** the frontend shows a confirmation warning that all installments of the group will be removed, including previous and settled ones
+- **AND** upon confirmation the frontend calls `DELETE /api/transactions/groups/{groupId}/installments`
+- **AND** the frontend removes the affected installments from the current view after success
+
+#### Scenario: Delete this and future recurrence occurrences
+- **WHEN** the user confirms deletion of a recurrent transaction including future occurrences
+- **THEN** the frontend calls the backend from-here recurrence delete endpoint
+- **AND** the frontend removes the affected occurrences from the current view after success
 
 #### Scenario: Cancel transaction
-- **WHEN** an authenticated user triggers cancellation for a transaction
-- **THEN** the frontend shows `antd Modal.confirm` requesting confirmation
+- **WHEN** an authenticated user triggers cancellation for a transaction where that action is offered
+- **THEN** the frontend shows confirmation requesting confirmation
 - **AND** upon confirmation the frontend calls `POST /api/transactions/{id}/cancel`
-- **AND** the frontend displays the transaction with status `CANCELADA` after success
-
-#### Scenario: Delete transaction
-- **WHEN** an authenticated user triggers deletion for a transaction
-- **THEN** the frontend shows `antd Modal.confirm` requesting confirmation
-- **AND** upon confirmation the frontend calls `DELETE /api/transactions/{id}`
-- **AND** the frontend removes the transaction from the current view after success
+- **AND** the frontend displays the transaction with status `CANCELADA` after success (or omits it from Meu mês lists per `meu-mes` rules)
 
 ### Requirement: User can manage transaction attachments
 The frontend SHALL display and manage attachment metadata using the backend attachment endpoints.

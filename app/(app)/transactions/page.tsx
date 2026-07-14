@@ -1,5 +1,5 @@
-import { TransactionsView } from "@/components/transactions/transactions-view";
+import { redirect } from "next/navigation";
 
 export default function TransactionsPage() {
-  return <TransactionsView />;
+  redirect("/meu-mes");
 }

@@ -35,6 +35,11 @@ export const transactions = {
       method: "DELETE",
     }),
 
+  deleteRecurrenceFromHere: (id: string) =>
+    apiFetch<void>(`/api/transactions/${id}/recurrence/from-here`, {
+      method: "DELETE",
+    }),
+
   cancel: (id: string) =>
     apiFetch<TransactionResponse>(`/api/transactions/${id}/cancel`, {
       method: "POST",

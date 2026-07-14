@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shell autenticado do frontend: sidebar lateral clara com navegação, ações de sessão e header com criação rápida de transação.
+Shell autenticado do frontend: sidebar lateral clara com navegação e ações de sessão.
 
 ## Requirements
 
@@ -13,9 +13,10 @@ O frontend SHALL renderizar o layout autenticado com sidebar lateral clara usand
 #### Scenario: Sidebar exibe os itens de navegação com ícones
 
 - **WHEN** um usuário autenticado acessa qualquer tela da aplicação
-- **THEN** o sidebar exibe os itens Dashboard, Transações e Meu mês como links de navegação
+- **THEN** o sidebar exibe os itens Dashboard, Meu mês e Configurações como links de navegação
 - **AND** cada item exibe um ícone de `@ant-design/icons` junto ao rótulo
 - **AND** o item correspondente à rota atual está visivelmente destacado como ativo
+- **AND** o sidebar NÃO exibe o item Transações
 
 #### Scenario: Sidebar preserva contraste legível no tema claro
 
@@ -35,13 +36,3 @@ O frontend SHALL renderizar o layout autenticado com sidebar lateral clara usand
 - **WHEN** a janela do navegador está em largura menor que o breakpoint de tablet
 - **THEN** o sidebar pode ser colapsado para exibir apenas ícones
 - **AND** o conteúdo principal ocupa o espaço disponível após o colapso
-
-### Requirement: Header exibe ação principal de criação de transação
-
-O frontend SHALL exibir um botão de acesso rápido à criação de transação no header do layout autenticado.
-
-#### Scenario: Botão "Nova transação" está acessível no header
-
-- **WHEN** um usuário autenticado está em qualquer tela da aplicação
-- **THEN** o header exibe o botão "Nova transação"
-- **AND** ao acionar o botão o usuário é navegado para `/transactions/new`

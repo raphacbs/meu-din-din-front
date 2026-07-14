@@ -5,21 +5,21 @@ import { usePathname } from "next/navigation";
 import {
   CalendarOutlined,
   DashboardOutlined,
-  SwapOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import type { MenuProps } from "antd";
 
 const NAV_ICONS = {
   "/dashboard": <DashboardOutlined />,
-  "/transactions": <SwapOutlined />,
   "/meu-mes": <CalendarOutlined />,
+  "/settings": <SettingOutlined />,
 } as const;
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/transactions", label: "Transações" },
   { href: "/meu-mes", label: "Meu mês" },
+  { href: "/settings", label: "Configurações" },
 ] as const;
 
 function isActivePath(pathname: string, href: string): boolean {

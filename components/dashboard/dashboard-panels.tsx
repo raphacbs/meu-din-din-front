@@ -117,7 +117,7 @@ export function TransactionPreviewList({
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {transactions.map((transaction) => (
             <li key={transaction.id} style={{ marginBottom: 8 }}>
-              <Link href={`/transactions/${transaction.id}`}>
+              <Link href="/meu-mes">
                 <div
                   style={{
                     display: "flex",

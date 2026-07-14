@@ -1,18 +1,23 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { message } from "antd";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import dayjs from "dayjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TransactionList } from "@/components/transactions/transaction-list";
 import {
   buildPayPayload,
+  buildUnpayPayload,
   canPayTransaction,
+  canUnpayTransaction,
 } from "@/components/transactions/transaction-row-actions";
 import type { TransactionResponse } from "@/lib/types/api";
 
 vi.mock("@/lib/api/transactions", () => ({
   transactions: {
     update: vi.fn(),
+    delete: vi.fn(),
+    deleteRecurrenceFromHere: vi.fn(),
   },
 }));
 
@@ -102,6 +107,20 @@ describe("canPayTransaction / buildPayPayload", () => {
       tags: ["casa"],
     });
   });
+
+  it("shows unpay only for paid statuses and omits paymentDate", () => {
+    expect(canUnpayTransaction("PAGO")).toBe(true);
+    expect(canUnpayTransaction("PAGO_COM_ATRASO")).toBe(true);
+    expect(canUnpayTransaction("A_VENCER")).toBe(false);
+    expect(buildUnpayPayload(paid)).toEqual({
+      type: "RECEITA",
+      amount: 500,
+      description: "Salário",
+      transactionDate: "2024-07-05",
+      dueDate: undefined,
+      tags: ["trabalho"],
+    });
+  });
 });
 
 describe("TransactionList", () => {
@@ -157,6 +176,48 @@ describe("TransactionList", () => {
     expect(payButtons).toHaveLength(1);
 
     expect(screen.getAllByRole("button", { name: "Anexar comprovante" })).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Desfazer recebimento" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Excluir" })).toHaveLength(3);
+  });
+
+  it("unpays after confirmation without paymentDate", async () => {
+    renderList([paid]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Desfazer recebimento" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Desfazer recebimento" }));
+
+    await waitFor(() => {
+      expect(transactions.update).toHaveBeenCalledWith("tx-paid", {
+        type: "RECEITA",
+        amount: 500,
+        description: "Salário",
+        transactionDate: "2024-07-05",
+        dueDate: undefined,
+        tags: ["trabalho"],
+      });
+    });
+  });
+
+  it("deletes after confirmation", async () => {
+    // Current month transaction so past-month gate does not block delete
+    const currentMonthUnpaid: TransactionResponse = {
+      ...unpaid,
+      id: "tx-current",
+      transactionDate: dayjs().format("YYYY-MM-DD"),
+      dueDate: dayjs().format("YYYY-MM-DD"),
+    };
+    vi.mocked(transactions.delete).mockResolvedValue(undefined);
+
+    renderList([currentMonthUnpaid]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Excluir" }));
+
+    await waitFor(() => {
+      expect(transactions.delete).toHaveBeenCalledWith("tx-current");
+    });
   });
 
   it("opens payment confirmation and does not call update when canceled", async () => {
