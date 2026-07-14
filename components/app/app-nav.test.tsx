@@ -24,7 +24,7 @@ describe("AppNav", () => {
       "href",
       "/transactions",
     );
-    expect(screen.getByRole("link", { name: "Extrato" })).toHaveAttribute("href", "/extract");
+    expect(screen.getByRole("link", { name: "Meu mês" })).toHaveAttribute("href", "/meu-mes");
   });
 
   it("marks the active route with aria-current", () => {

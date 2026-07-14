@@ -1,11 +1,35 @@
 import { formatTransactionStatus } from "@/lib/format/status";
-import type { TransactionResponse } from "@/lib/types/api";
+import type { TransactionResponse, TransactionStatus } from "@/lib/types/api";
 
 export interface PeriodTotals {
   expenseTotal: number;
   revenueTotal: number;
   balance: number;
 }
+
+export interface MeuMesSummary {
+  planned: PeriodTotals;
+  realized: PeriodTotals;
+  activeCount: number;
+  settledCount: number;
+  pendingExpenseTotal: number;
+  pendingRevenueTotal: number;
+}
+
+export interface MeuMesLists {
+  pending: TransactionResponse[];
+  settled: TransactionResponse[];
+}
+
+const SETTLED_STATUSES: ReadonlySet<TransactionStatus> = new Set([
+  "PAGO",
+  "PAGO_COM_ATRASO",
+]);
+
+const PENDING_STATUS_RANK: Record<string, number> = {
+  ATRASADA: 0,
+  VENCE_HOJE: 1,
+};
 
 export interface DistributionShare {
   key: string;
@@ -25,21 +49,73 @@ export interface TagShare {
 
 export type DistributionDimension = "tag" | "status" | "type";
 
+function sumByType(
+  transactions: TransactionResponse[],
+  type: TransactionResponse["type"],
+): number {
+  return transactions
+    .filter((transaction) => transaction.type === type)
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
 export function calculatePeriodTotals(transactions: TransactionResponse[]): PeriodTotals {
   const active = transactions.filter((transaction) => transaction.status !== "CANCELADA");
-
-  const revenueTotal = active
-    .filter((transaction) => transaction.type === "RECEITA")
-    .reduce((total, transaction) => total + transaction.amount, 0);
-
-  const expenseTotal = active
-    .filter((transaction) => transaction.type === "DESPESA")
-    .reduce((total, transaction) => total + transaction.amount, 0);
+  const revenueTotal = sumByType(active, "RECEITA");
+  const expenseTotal = sumByType(active, "DESPESA");
 
   return {
     expenseTotal,
     revenueTotal,
     balance: revenueTotal - expenseTotal,
+  };
+}
+
+export function isSettledStatus(status: TransactionStatus): boolean {
+  return SETTLED_STATUSES.has(status);
+}
+
+export function isPendingStatus(status: TransactionStatus): boolean {
+  return status !== "CANCELADA" && !SETTLED_STATUSES.has(status);
+}
+
+function sortKeyDate(transaction: TransactionResponse, preferDue: boolean): string {
+  if (preferDue) {
+    return transaction.dueDate ?? transaction.transactionDate;
+  }
+  return transaction.paymentDate ?? transaction.transactionDate;
+}
+
+export function splitMeuMesLists(transactions: TransactionResponse[]): MeuMesLists {
+  const pending = transactions
+    .filter((transaction) => isPendingStatus(transaction.status))
+    .sort((left, right) => {
+      const rankLeft = PENDING_STATUS_RANK[left.status] ?? 2;
+      const rankRight = PENDING_STATUS_RANK[right.status] ?? 2;
+      if (rankLeft !== rankRight) {
+        return rankLeft - rankRight;
+      }
+      return sortKeyDate(left, true).localeCompare(sortKeyDate(right, true));
+    });
+
+  const settled = transactions
+    .filter((transaction) => isSettledStatus(transaction.status))
+    .sort((left, right) => sortKeyDate(right, false).localeCompare(sortKeyDate(left, false)));
+
+  return { pending, settled };
+}
+
+export function calculateMeuMesSummary(transactions: TransactionResponse[]): MeuMesSummary {
+  const active = transactions.filter((transaction) => transaction.status !== "CANCELADA");
+  const settled = active.filter((transaction) => isSettledStatus(transaction.status));
+  const pending = active.filter((transaction) => isPendingStatus(transaction.status));
+
+  return {
+    planned: calculatePeriodTotals(active),
+    realized: calculatePeriodTotals(settled),
+    activeCount: active.length,
+    settledCount: settled.length,
+    pendingExpenseTotal: sumByType(pending, "DESPESA"),
+    pendingRevenueTotal: sumByType(pending, "RECEITA"),
   };
 }
 

@@ -13,7 +13,7 @@ O frontend SHALL renderizar o layout autenticado com sidebar lateral clara usand
 #### Scenario: Sidebar exibe os itens de navegação com ícones
 
 - **WHEN** um usuário autenticado acessa qualquer tela da aplicação
-- **THEN** o sidebar exibe os itens Dashboard, Transações e Extrato como links de navegação
+- **THEN** o sidebar exibe os itens Dashboard, Transações e Meu mês como links de navegação
 - **AND** cada item exibe um ícone de `@ant-design/icons` junto ao rótulo
 - **AND** o item correspondente à rota atual está visivelmente destacado como ativo
 

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateDistributionShares,
+  calculateMeuMesSummary,
   calculatePeriodTotals,
   calculateTagShares,
+  splitMeuMesLists,
 } from "@/lib/transactions/totals";
 import type { TransactionResponse } from "@/lib/types/api";
 
@@ -45,6 +47,89 @@ describe("calculatePeriodTotals", () => {
       expenseTotal: 0,
       revenueTotal: 0,
       balance: 0,
+    });
+  });
+});
+
+describe("splitMeuMesLists / calculateMeuMesSummary", () => {
+  it("splits pending vs settled, excludes canceled, and sorts pending by urgency", () => {
+    const items: TransactionResponse[] = [
+      {
+        ...baseTransaction,
+        id: "tx-a-vencer",
+        status: "A_VENCER",
+        dueDate: "2024-07-20",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-atrasada",
+        status: "ATRASADA",
+        dueDate: "2024-07-01",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-hoje",
+        status: "VENCE_HOJE",
+        dueDate: "2024-07-12",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-pago-old",
+        status: "PAGO",
+        paymentDate: "2024-07-02",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-pago-new",
+        type: "RECEITA",
+        amount: 200,
+        status: "PAGO_COM_ATRASO",
+        paymentDate: "2024-07-10",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-cancel",
+        status: "CANCELADA",
+      },
+    ];
+
+    const { pending, settled } = splitMeuMesLists(items);
+    expect(pending.map((item) => item.id)).toEqual([
+      "tx-atrasada",
+      "tx-hoje",
+      "tx-a-vencer",
+    ]);
+    expect(settled.map((item) => item.id)).toEqual(["tx-pago-new", "tx-pago-old"]);
+  });
+
+  it("computes dual balances and pending pay/receive totals", () => {
+    const items: TransactionResponse[] = [
+      { ...baseTransaction, id: "tx-1", amount: 100, status: "A_VENCER" },
+      {
+        ...baseTransaction,
+        id: "tx-2",
+        type: "RECEITA",
+        amount: 500,
+        status: "PAGO",
+        paymentDate: "2024-07-05",
+      },
+      {
+        ...baseTransaction,
+        id: "tx-3",
+        type: "RECEITA",
+        amount: 80,
+        status: "A_VENCER",
+      },
+      { ...baseTransaction, id: "tx-4", amount: 200, status: "CANCELADA" },
+    ];
+
+    expect(calculateMeuMesSummary(items)).toEqual({
+      planned: { expenseTotal: 100, revenueTotal: 580, balance: 480 },
+      realized: { expenseTotal: 0, revenueTotal: 500, balance: 500 },
+      activeCount: 3,
+      settledCount: 1,
+      pendingExpenseTotal: 100,
+      pendingRevenueTotal: 80,
     });
   });
 });

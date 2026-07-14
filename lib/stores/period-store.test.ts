@@ -54,6 +54,22 @@ describe("usePeriodStore", () => {
     expect(usePeriodStore.getState().applied).toEqual(applied);
   });
 
+  it("applyMonth sets draft and applied in one step", () => {
+    const applied = usePeriodStore.getState().applyMonth(2024, 7);
+
+    expect(applied).toEqual({ from: "2024-07-01", to: "2024-07-31" });
+    expect(usePeriodStore.getState()).toMatchObject({
+      draft: {
+        mode: "month",
+        year: 2024,
+        month: 7,
+        from: "2024-07-01",
+        to: "2024-07-31",
+      },
+      applied,
+    });
+  });
+
   it("hydrate sets draft and applied in custom mode with the URL dates", () => {
     usePeriodStore.getState().hydrate("2024-07-01", "2024-07-31");
     expect(usePeriodStore.getState()).toMatchObject({

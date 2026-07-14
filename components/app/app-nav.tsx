@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarOutlined,
   DashboardOutlined,
-  FileTextOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
@@ -13,13 +13,13 @@ import type { MenuProps } from "antd";
 const NAV_ICONS = {
   "/dashboard": <DashboardOutlined />,
   "/transactions": <SwapOutlined />,
-  "/extract": <FileTextOutlined />,
+  "/meu-mes": <CalendarOutlined />,
 } as const;
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transactions", label: "Transações" },
-  { href: "/extract", label: "Extrato" },
+  { href: "/meu-mes", label: "Meu mês" },
 ] as const;
 
 function isActivePath(pathname: string, href: string): boolean {

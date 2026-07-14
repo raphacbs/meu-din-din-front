@@ -64,6 +64,56 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
+@keyframes meu-mes-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes meu-mes-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes meu-mes-hero-pulse {
+  0% {
+    box-shadow: 0 18px 40px rgba(23, 33, 27, 0.06);
+  }
+  40% {
+    box-shadow: 0 18px 48px rgba(47, 125, 76, 0.22);
+  }
+  100% {
+    box-shadow: 0 18px 40px rgba(23, 33, 27, 0.06);
+  }
+}
+
+.meu-mes-row--exiting {
+  animation: meu-mes-exit 360ms ease forwards;
+}
+
+.meu-mes-row--entering {
+  animation: meu-mes-enter 380ms ease;
+}
+
+.meu-mes-hero--pulse {
+  animation: meu-mes-hero-pulse 420ms ease;
+}
+
+.meu-mes-hero--pulse .meu-mes-hero__realized {
+  outline: 2px solid color-mix(in srgb, var(--color-cash-green) 35%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

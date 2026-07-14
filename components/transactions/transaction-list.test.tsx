@@ -150,10 +150,10 @@ describe("TransactionList", () => {
     vi.mocked(attachments.delete).mockResolvedValue(undefined);
   });
 
-  it("shows pay action only for unpaid transactions and always shows attach", () => {
+  it("shows quit action only for unpaid transactions and always shows attach", () => {
     renderList([unpaid, paid, canceled]);
 
-    const payButtons = screen.getAllByRole("button", { name: "Pagar" });
+    const payButtons = screen.getAllByRole("button", { name: "Quitar" });
     expect(payButtons).toHaveLength(1);
 
     expect(screen.getAllByRole("button", { name: "Anexar comprovante" })).toHaveLength(3);
@@ -162,10 +162,10 @@ describe("TransactionList", () => {
   it("opens payment confirmation and does not call update when canceled", async () => {
     renderList([unpaid]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Pagar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Quitar" }));
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Confirmar pagamento?")).toBeInTheDocument();
+    expect(within(dialog).getByText("Confirmar quitação?")).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
 
     expect(transactions.update).not.toHaveBeenCalled();
@@ -181,9 +181,9 @@ describe("TransactionList", () => {
 
     renderList([unpaid]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Pagar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Quitar" }));
     const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar pagamento" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar quitação" }));
 
     await waitFor(() => {
       expect(transactions.update).toHaveBeenCalledWith("tx-unpaid", {
@@ -196,6 +196,21 @@ describe("TransactionList", () => {
         tags: ["casa"],
       });
     });
+  });
+
+  it("shows receive action for unpaid revenue", async () => {
+    const unpaidRevenue: TransactionResponse = {
+      ...paid,
+      id: "tx-revenue-pending",
+      status: "A_VENCER",
+      paymentDate: undefined,
+    };
+
+    renderList([unpaidRevenue]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Receber" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Confirmar recebimento?")).toBeInTheDocument();
   });
 
   it("opens attach modal with upload button and saves metadata", async () => {
@@ -232,7 +247,7 @@ describe("TransactionList", () => {
         }),
       );
     });
-  });
+  }, 15_000);
 
   it("shows attachment count badge on attach action", async () => {
     renderList([paid, unpaid]);

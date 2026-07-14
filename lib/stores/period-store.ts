@@ -23,6 +23,7 @@ interface PeriodState {
   setMonth: (year: number, month: number) => void;
   setCustomRange: (from: string | null, to: string | null) => void;
   apply: () => DateRange | null;
+  applyMonth: (year: number, month: number) => DateRange;
   hydrate: (from: string, to: string) => void;
   applyCurrentMonthDefault: () => DateRange;
   reset: () => void;
@@ -108,6 +109,21 @@ export const usePeriodStore = create<PeriodState>((set, get) => ({
     const applied = { from: draft.from, to: draft.to };
     set({ applied });
     return applied;
+  },
+
+  applyMonth: (year, month) => {
+    const range = monthRange(year, month);
+    set({
+      draft: {
+        mode: "month",
+        year,
+        month,
+        from: range.from,
+        to: range.to,
+      },
+      applied: range,
+    });
+    return range;
   },
 
   hydrate: (from, to) => {

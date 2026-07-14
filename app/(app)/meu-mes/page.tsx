@@ -1,18 +1,18 @@
 import { Suspense } from "react";
 import { Spin } from "antd";
 
-import { ExtractView } from "@/components/transactions/extract-view";
+import { MeuMesView } from "@/components/transactions/meu-mes-view";
 
-export default function ExtractPage() {
+export default function MeuMesPage() {
   return (
     <Suspense
       fallback={
-        <Spin tip="Carregando extrato...">
+        <Spin tip="Carregando Meu mês...">
           <div style={{ minHeight: 120 }} />
         </Spin>
       }
     >
-      <ExtractView />
+      <MeuMesView />
     </Suspense>
   );
 }

@@ -167,7 +167,7 @@ export function DashboardView() {
               </Col>
               <Col xs={24} lg={12}>
                 <TransactionPreviewList
-                  title="Extrato recente"
+                  title="Liquidados recentes"
                   emptyLabel="Nenhuma movimentação recente."
                   transactions={summary.paid.slice(0, 5).map((transaction) => ({
                     id: transaction.id,
