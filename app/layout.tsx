@@ -3,6 +3,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Libre_Baskerville, Source_Sans_3 } from "next/font/google";
 
 import { AppProviders } from "@/app/providers";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme/theme-preference";
 
 import "./globals.css";
 
@@ -32,7 +33,11 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body style={{ display: "flex", minHeight: "100%", flexDirection: "column" }}>
         <AntdRegistry>
           <AppProviders>{children}</AppProviders>

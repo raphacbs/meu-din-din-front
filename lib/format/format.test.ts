@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import dayjs from "dayjs";
 
 import { formatCurrency, formatSignedCurrency } from "@/lib/format/currency";
-import { formatDate, formatDateTime, formatRelativeTime } from "@/lib/format/date";
+import { disableFutureDates, formatDate, formatDateTime, formatRelativeTime } from "@/lib/format/date";
 import { formatFileSize } from "@/lib/format/file-size";
 import {
   formatTransactionStatus,
@@ -26,6 +27,28 @@ describe("formatSignedCurrency", () => {
 describe("formatDate", () => {
   it("formats ISO date-only values without timezone drift", () => {
     expect(formatDate("2024-07-05")).toBe("05/07/2024");
+  });
+});
+
+describe("disableFutureDates", () => {
+  it("allows today and past dates", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-07-05T12:00:00"));
+
+    const today = dayjs();
+    expect(disableFutureDates(today)).toBe(false);
+    expect(disableFutureDates(today.subtract(1, "day"))).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it("disables future dates", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-07-05T12:00:00"));
+
+    expect(disableFutureDates(dayjs().add(1, "day"))).toBe(true);
+
+    vi.useRealTimers();
   });
 });
 

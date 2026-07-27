@@ -90,7 +90,11 @@ async function parseErrorMessage(response: Response): Promise<string> {
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
 
-  if (!headers.has("Content-Type") && init.body) {
+  const isFormData =
+    typeof FormData !== "undefined" && init.body instanceof FormData;
+
+  // Não forçar JSON em multipart: o browser define o Content-Type com o boundary.
+  if (!headers.has("Content-Type") && init.body && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
 

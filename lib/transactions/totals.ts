@@ -162,6 +162,54 @@ export function calculateTagShares(transactions: TransactionResponse[]): TagShar
   }));
 }
 
+/** Tags distintas presentes na lista, ordenadas alfabeticamente. Não inclui "Sem tag". */
+export function listDistinctTags(transactions: TransactionResponse[]): string[] {
+  const tags = new Set<string>();
+  for (const transaction of transactions) {
+    for (const tag of transaction.tags ?? []) {
+      tags.add(tag);
+    }
+  }
+  return [...tags].sort((left, right) => left.localeCompare(right));
+}
+
+export interface TagPartition {
+  group: TransactionResponse[];
+  rest: TransactionResponse[];
+  total: number;
+  count: number;
+}
+
+/**
+ * Particiona `transactions` entre quem possui `tag` (grupo) e quem não possui (resto).
+ * `rest` preserva a ordem original de `transactions`. `total` é o saldo líquido
+ * (RECEITA − DESPESA) do grupo. Quando `tag` é `null`, tudo cai em `rest`.
+ */
+export function partitionByTag(
+  transactions: TransactionResponse[],
+  tag: string | null,
+): TagPartition {
+  if (!tag) {
+    return { group: [], rest: transactions, total: 0, count: 0 };
+  }
+
+  const group: TransactionResponse[] = [];
+  const rest: TransactionResponse[] = [];
+
+  for (const transaction of transactions) {
+    if (transaction.tags?.includes(tag)) {
+      group.push(transaction);
+    } else {
+      rest.push(transaction);
+    }
+  }
+
+  const total =
+    sumByType(group, "RECEITA") - sumByType(group, "DESPESA");
+
+  return { group, rest, total, count: group.length };
+}
+
 export function calculateDistributionShares(
   transactions: TransactionResponse[],
   dimension: DistributionDimension,

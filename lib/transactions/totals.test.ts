@@ -5,6 +5,8 @@ import {
   calculateMeuMesSummary,
   calculatePeriodTotals,
   calculateTagShares,
+  listDistinctTags,
+  partitionByTag,
   splitMeuMesLists,
 } from "@/lib/transactions/totals";
 import type { TransactionResponse } from "@/lib/types/api";
@@ -162,6 +164,66 @@ describe("calculateTagShares", () => {
       { tag: "trabalho", amount: 200, count: 1, percent: 40 },
       { tag: "mercado", amount: 100, count: 1, percent: 20 },
     ]);
+  });
+});
+
+describe("listDistinctTags", () => {
+  it("returns distinct tags sorted alphabetically", () => {
+    const items: TransactionResponse[] = [
+      { ...baseTransaction, id: "tx-1", tags: ["mercado", "casa"] },
+      { ...baseTransaction, id: "tx-2", tags: ["casa"] },
+      { ...baseTransaction, id: "tx-3", tags: [] },
+      { ...baseTransaction, id: "tx-4" },
+    ];
+
+    expect(listDistinctTags(items)).toEqual(["casa", "mercado"]);
+  });
+
+  it("returns an empty array when there are no tags", () => {
+    expect(listDistinctTags([baseTransaction])).toEqual([]);
+  });
+});
+
+describe("partitionByTag", () => {
+  const items: TransactionResponse[] = [
+    { ...baseTransaction, id: "tx-1", type: "DESPESA", amount: 100, tags: ["casa"] },
+    { ...baseTransaction, id: "tx-2", type: "DESPESA", amount: 50, tags: ["transporte"] },
+    {
+      ...baseTransaction,
+      id: "tx-3",
+      type: "RECEITA",
+      amount: 30,
+      status: "PAGO",
+      tags: ["casa", "extra"],
+    },
+    { ...baseTransaction, id: "tx-4", type: "DESPESA", amount: 20, tags: [] },
+  ];
+
+  it("puts everything in rest and zeroes total/count when tag is null", () => {
+    expect(partitionByTag(items, null)).toEqual({
+      group: [],
+      rest: items,
+      total: 0,
+      count: 0,
+    });
+  });
+
+  it("splits into group/rest, preserving rest order, and computes net total", () => {
+    const result = partitionByTag(items, "casa");
+
+    expect(result.group.map((item) => item.id)).toEqual(["tx-1", "tx-3"]);
+    expect(result.rest.map((item) => item.id)).toEqual(["tx-2", "tx-4"]);
+    expect(result.total).toBe(30 - 100);
+    expect(result.count).toBe(2);
+  });
+
+  it("returns an empty group when no transaction has the tag", () => {
+    const result = partitionByTag(items, "inexistente");
+
+    expect(result.group).toEqual([]);
+    expect(result.rest).toEqual(items);
+    expect(result.total).toBe(0);
+    expect(result.count).toBe(0);
   });
 });
 

@@ -73,9 +73,9 @@ interface SummaryCardProps {
 
 const TONE_COLORS: Record<NonNullable<SummaryCardProps["tone"]>, string | undefined> = {
   default: undefined,
-  success: "#2f7d4c",
-  warning: "#c77a19",
-  danger: "#b84232",
+  success: "var(--color-cash-green)",
+  warning: "var(--color-warning)",
+  danger: "var(--color-expense)",
 };
 
 export function SummaryCard({ title, value, description, tone = "default" }: SummaryCardProps) {

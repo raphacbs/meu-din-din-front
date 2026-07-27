@@ -10,6 +10,8 @@ import {
 import { Menu } from "antd";
 import type { MenuProps } from "antd";
 
+import { useTheme } from "@/lib/theme/theme-provider";
+
 const NAV_ICONS = {
   "/dashboard": <DashboardOutlined />,
   "/meu-mes": <CalendarOutlined />,
@@ -37,7 +39,9 @@ function getSelectedKey(pathname: string): string {
 
 export function AppNav() {
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
   const selectedKey = getSelectedKey(pathname);
+  const menuTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   const items: MenuProps["items"] = NAV_ITEMS.map((item) => {
     const isActive = isActivePath(pathname, item.href);
@@ -57,7 +61,7 @@ export function AppNav() {
     <nav aria-label="Principal">
       <Menu
         mode="inline"
-        theme="light"
+        theme={menuTheme}
         selectedKeys={[selectedKey]}
         items={items}
         style={{ borderInlineEnd: "none", background: "transparent" }}

@@ -6,6 +6,7 @@ import { Button, Layout, Typography } from "antd";
 
 import { AppNav } from "@/components/app/app-nav";
 import { useSession } from "@/lib/auth/session-context";
+import { useTheme } from "@/lib/theme/theme-provider";
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -16,7 +17,9 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const { logout, user } = useSession();
+  const { resolvedTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
+  const siderTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   return (
     <Layout style={{ minHeight: "100%" }}>
@@ -38,7 +41,7 @@ export function AppShell({ children }: AppShellProps) {
           event.currentTarget.style.width = "auto";
           event.currentTarget.style.height = "auto";
           event.currentTarget.style.padding = "8px 16px";
-          event.currentTarget.style.background = "#ffffff";
+          event.currentTarget.style.background = "var(--color-surface)";
           event.currentTarget.style.borderRadius = "8px";
         }}
         onBlur={(event) => {
@@ -53,14 +56,14 @@ export function AppShell({ children }: AppShellProps) {
       </a>
 
       <Sider
-        theme="light"
+        theme={siderTheme}
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         width={240}
         style={{
-          background: "#ffffff",
-          borderRight: "1px solid #d7ded8",
+          background: "var(--color-surface)",
+          borderRight: "1px solid var(--color-border)",
         }}
       >
         <div
@@ -76,7 +79,7 @@ export function AppShell({ children }: AppShellProps) {
           <Link
             href="/dashboard"
             style={{
-              color: "#2f7d4c",
+              color: "var(--color-cash-green)",
               fontFamily: "var(--font-display), Georgia, serif",
               fontSize: collapsed ? 18 : 20,
               fontWeight: 600,
@@ -97,8 +100,8 @@ export function AppShell({ children }: AppShellProps) {
             bottom: 48,
             width: "100%",
             padding: collapsed ? "12px 8px" : "16px 24px",
-            borderTop: "1px solid #d7ded8",
-            background: "#ffffff",
+            borderTop: "1px solid var(--color-border)",
+            background: "var(--color-surface)",
           }}
         >
           {user && !collapsed ? (
@@ -119,8 +122,8 @@ export function AppShell({ children }: AppShellProps) {
             alignItems: "center",
             justifyContent: "flex-end",
             padding: "0 24px",
-            background: "#ffffff",
-            borderBottom: "1px solid #d7ded8",
+            background: "var(--color-surface)",
+            borderBottom: "1px solid var(--color-border)",
             height: 64,
           }}
         />

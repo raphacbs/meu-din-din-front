@@ -24,6 +24,28 @@ export interface SessionResponse {
   email: string;
 }
 
+// --- Tags ---
+export interface TagSummary {
+  name: string;
+  usageCount: number;
+  color: string;
+}
+
+export interface TagUpsertRequest {
+  name: string;
+  color: string;
+}
+
+export interface TagRenameRequest {
+  from: string;
+  to: string;
+}
+
+export interface TagRenameResponse {
+  renamedCount: number;
+  mergedCount: number;
+}
+
 // --- Enums ---
 export type TransactionType = "DESPESA" | "RECEITA";
 
@@ -53,6 +75,16 @@ export interface InstallmentRequest {
   installmentCount: number;
   installmentAmount: number;
   firstDueDate: string;
+  startingInstallmentNumber?: number;
+  originalInstallmentCount?: number;
+}
+
+export interface InstallmentGroupUpdateRequest {
+  installmentCount: number;
+  installmentAmount: number;
+  firstDueDate: string;
+  description: string;
+  tags?: string[];
 }
 
 export interface TransactionUpsertRequest {
@@ -90,6 +122,86 @@ export interface TransactionResponse {
   installmentCount?: number;
 }
 
+export type TransactionBatchDeleteScope =
+  | "SINGLE"
+  | "RECURRENCE_FROM_HERE"
+  | "INSTALLMENT_GROUP";
+
+export interface TransactionBatchDeleteItemRequest {
+  id: string;
+  scope: TransactionBatchDeleteScope;
+}
+
+export interface TransactionBatchSettleRequest {
+  ids: string[];
+  paymentDate?: string | null;
+}
+
+export interface TransactionBatchDeleteRequest {
+  items: TransactionBatchDeleteItemRequest[];
+}
+
+export interface TransactionBatchFailureResponse {
+  id: string;
+  message: string;
+}
+
+export interface TransactionBatchSettleResponse {
+  succeeded: string[];
+  failures: TransactionBatchFailureResponse[];
+}
+
+export interface TransactionBatchDeleteResponse {
+  succeeded: string[];
+  failures: TransactionBatchFailureResponse[];
+}
+
+// --- Invoice import ---
+export type ImportBank = "INTER";
+
+export type InvoiceEntryKind = "DEBIT" | "CREDIT";
+
+export interface InvoiceParseItem {
+  sourceIndex: number;
+  description: string;
+  amount: number;
+  transactionDate: string;
+  dueDate: string;
+  type: "DESPESA";
+  entryKind: InvoiceEntryKind;
+  tags: string[];
+}
+
+export interface InvoiceParseResponse {
+  dueDate: string;
+  items: InvoiceParseItem[];
+}
+
+export interface BatchTransactionItem {
+  description: string;
+  amount: number;
+  transactionDate: string;
+  dueDate: string;
+  type: "DESPESA";
+  tags?: string[];
+  installment?: InstallmentRequest;
+  recurrence?: RecurrenceRequest;
+}
+
+export interface BatchCreateRequest {
+  items: BatchTransactionItem[];
+}
+
+export interface BatchCreateFailure {
+  index: number;
+  message: string;
+}
+
+export interface BatchCreateResponse {
+  created: TransactionResponse[];
+  failures: BatchCreateFailure[];
+}
+
 export interface AttachmentRequest {
   fileName: string;
   fileUrl: string;
@@ -118,4 +230,41 @@ export interface UserPreferencesResponse {
 export interface ProjectionResponse {
   projectedBalance: number;
   generatedAt: string;
+}
+
+// --- Analytics ---
+export interface MonthlyTotals {
+  month: number;
+  expenseTotal: number;
+  incomeTotal: number;
+}
+
+export interface TagAmount {
+  tag: string;
+  amount: number;
+}
+
+export interface TagRadarMonthly {
+  month: number;
+  tags: TagAmount[];
+}
+
+export interface TagRadar {
+  yearTotals: TagAmount[];
+  monthly: TagRadarMonthly[];
+}
+
+export interface ExpenseParetoItem {
+  tag: string;
+  amount: number;
+  percent: number;
+  cumulativePercent: number;
+}
+
+export interface DashboardAnalyticsResponse {
+  year: number;
+  availableYears: number[];
+  monthlyTotals: MonthlyTotals[];
+  tagRadar: TagRadar;
+  expensePareto: ExpenseParetoItem[];
 }

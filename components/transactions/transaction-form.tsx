@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { disableFutureDates } from "@/lib/format/date";
 import { TagSelect } from "@/components/ui/tag-select";
 import {
   buildTransactionPayload,
@@ -75,11 +76,12 @@ export function TransactionForm({
   const [form] = Form.useForm<TransactionAntdFormValues>();
   const [validationError, setValidationError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const mode = Form.useWatch("mode", form) ?? "single";
   const mergedInitialValues = useMemo(
     () => ({ ...getDefaultAntdValues(), ...initialValues }),
     [initialValues],
   );
+  const watchedMode = Form.useWatch("mode", form);
+  const mode = watchedMode ?? mergedInitialValues.mode ?? "single";
 
   useEffect(() => {
     form.setFieldsValue(mergedInitialValues);
@@ -119,14 +121,18 @@ export function TransactionForm({
       onFinish={handleFinish}
       requiredMark={false}
     >
-      {!disableModeSwitch ? (
+      {disableModeSwitch ? (
+        <Form.Item name="mode" hidden>
+          <Input />
+        </Form.Item>
+      ) : (
         <Form.Item name="mode" label="Modo da transação">
           <Segmented
             options={MODE_OPTIONS}
             onChange={(nextMode) => form.setFieldValue("mode", nextMode as TransactionMode)}
           />
         </Form.Item>
-      ) : null}
+      )}
 
       <Row gutter={16}>
         <Col xs={24} md={12}>
@@ -168,7 +174,11 @@ export function TransactionForm({
             label="Data da transação"
             rules={[{ required: true, message: "Informe a data da transação." }]}
           >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="DD/MM/YYYY"
+              disabledDate={mode === "single" ? disableFutureDates : undefined}
+            />
           </Form.Item>
         </Col>
 
@@ -195,7 +205,11 @@ export function TransactionForm({
         {mode === "single" ? (
           <Col xs={24} md={8}>
             <Form.Item name="paymentDate" label="Pagamento">
-              <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+              <DatePicker
+                style={{ width: "100%" }}
+                format="DD/MM/YYYY"
+                disabledDate={disableFutureDates}
+              />
             </Form.Item>
           </Col>
         ) : null}

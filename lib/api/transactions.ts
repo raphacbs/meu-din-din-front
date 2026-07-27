@@ -1,5 +1,10 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
+  InstallmentGroupUpdateRequest,
+  TransactionBatchDeleteRequest,
+  TransactionBatchDeleteResponse,
+  TransactionBatchSettleRequest,
+  TransactionBatchSettleResponse,
   TransactionResponse,
   TransactionUpsertRequest,
   TransactionGroupResponse,
@@ -45,6 +50,15 @@ export const transactions = {
       method: "POST",
     }),
 
+  listInstallments: (groupId: string) =>
+    apiFetch<TransactionResponse[]>(`/api/transactions/groups/${groupId}/installments`),
+
+  updateInstallments: (groupId: string, body: InstallmentGroupUpdateRequest) =>
+    apiFetch<TransactionResponse[]>(`/api/transactions/groups/${groupId}/installments`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
   deleteInstallments: (groupId: string) =>
     apiFetch<void>(`/api/transactions/groups/${groupId}/installments`, {
       method: "DELETE",
@@ -55,4 +69,25 @@ export const transactions = {
       `/api/transactions/groups/${groupId}/recurrence/deactivate`,
       { method: "POST" },
     ),
+
+  settleBatch: (body: TransactionBatchSettleRequest) =>
+    apiFetch<TransactionBatchSettleResponse>("/api/transactions/batch/settle", {
+      method: "POST",
+      body: JSON.stringify({
+        ...body,
+        ids: body.ids.map((id) => Number(id)),
+      }),
+    }),
+
+  deleteBatch: (body: TransactionBatchDeleteRequest) =>
+    apiFetch<TransactionBatchDeleteResponse>("/api/transactions/batch/delete", {
+      method: "POST",
+      body: JSON.stringify({
+        ...body,
+        items: body.items.map((item) => ({
+          ...item,
+          id: Number(item.id),
+        })),
+      }),
+    }),
 };

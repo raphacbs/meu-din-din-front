@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Empty, Result, Space, Spin } from "antd";
 import dayjs from "dayjs";
 
+import { MeuMesBulkActions } from "@/components/transactions/meu-mes-bulk-actions";
+import { InvoiceImportDrawer } from "@/components/transactions/invoice-import-drawer";
 import { MeuMesHero } from "@/components/transactions/meu-mes-hero";
 import { MeuMesTransactionLists } from "@/components/transactions/meu-mes-transaction-lists";
 import { TransactionFormDrawer } from "@/components/transactions/transaction-form-drawer";
@@ -58,9 +60,13 @@ export function MeuMesView() {
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [heroPulse, setHeroPulse] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionResponse | null>(
     null,
   );
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [pendingGroupTag, setPendingGroupTag] = useState<string | null>(null);
+  const [settledGroupTag, setSettledGroupTag] = useState<string | null>(null);
   const timersRef = useRef<number[]>([]);
 
   const draft = usePeriodStore((state) => state.draft);
@@ -145,7 +151,29 @@ export function MeuMesView() {
     [meuMesQuery.data],
   );
 
+  const selectedTransactions = useMemo(() => {
+    const byId = new Map(
+      (meuMesQuery.data ?? []).map((transaction) => [String(transaction.id), transaction]),
+    );
+    return selectedRowKeys
+      .map((key) => byId.get(String(key)))
+      .filter((transaction): transaction is TransactionResponse => transaction != null);
+  }, [meuMesQuery.data, selectedRowKeys]);
+
+  function handleSelectedRowKeysChange(keys: React.Key[]) {
+    setSelectedRowKeys(keys.map((key) => String(key)));
+  }
+
+  useEffect(() => {
+    setSelectedRowKeys([]);
+    setPendingGroupTag(null);
+    setSettledGroupTag(null);
+  }, [applied?.from, applied?.to]);
+
   function handleMonthChange(year: number, month: number) {
+    setSelectedRowKeys([]);
+    setPendingGroupTag(null);
+    setSettledGroupTag(null);
     const range = applyMonth(year, month);
     replacePeriodInUrl(router, pathname, range.from, range.to);
   }
@@ -153,6 +181,10 @@ export function MeuMesView() {
   function openCreate() {
     setEditingTransaction(null);
     setDrawerMode("create");
+  }
+
+  function openImport() {
+    setImportOpen(true);
   }
 
   function openEdit(transaction: TransactionResponse) {
@@ -215,6 +247,7 @@ export function MeuMesView() {
         pulse={heroPulse}
         onMonthChange={handleMonthChange}
         onCreate={openCreate}
+        onImport={openImport}
       />
 
       {!hydrated || !applied || meuMesQuery.isLoading ? (
@@ -237,14 +270,29 @@ export function MeuMesView() {
           </Button>
         </Empty>
       ) : (
-        <MeuMesTransactionLists
-          pending={lists.pending}
-          settled={lists.settled}
-          exitingId={exitingId}
-          enteringId={enteringId}
-          onSettleSuccess={handleSettleSuccess}
-          onEdit={openEdit}
-        />
+        <>
+          <MeuMesBulkActions
+            selected={selectedTransactions}
+            selectedCount={selectedRowKeys.length}
+            prefs={{ blockPastMonthMutations }}
+            onClearSelection={() => setSelectedRowKeys([])}
+            onSuccess={invalidateAfterSettle}
+          />
+          <MeuMesTransactionLists
+            pending={lists.pending}
+            settled={lists.settled}
+            exitingId={exitingId}
+            enteringId={enteringId}
+            selectedRowKeys={selectedRowKeys}
+            onSelectedRowKeysChange={handleSelectedRowKeysChange}
+            onSettleSuccess={handleSettleSuccess}
+            onEdit={openEdit}
+            pendingGroupTag={pendingGroupTag}
+            settledGroupTag={settledGroupTag}
+            onPendingGroupTagChange={setPendingGroupTag}
+            onSettledGroupTagChange={setSettledGroupTag}
+          />
+        </>
       )}
 
       <TransactionFormDrawer
@@ -252,6 +300,18 @@ export function MeuMesView() {
         mode={drawerMode === "edit" ? "edit" : "create"}
         transaction={editingTransaction}
         onClose={closeDrawer}
+      />
+
+      <InvoiceImportDrawer
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {
+          setImportOpen(false);
+          setHeroPulse(true);
+          void invalidateAfterSettle().finally(() => {
+            window.setTimeout(() => setHeroPulse(false), 900);
+          });
+        }}
       />
     </Space>
   );

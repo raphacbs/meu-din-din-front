@@ -9,10 +9,10 @@ interface CashRibbonProps {
 }
 
 const SEGMENTS = [
-  { key: "revenue", label: "Receita", color: "#2f7d4c" },
-  { key: "expense", label: "Despesa", color: "#b84232" },
-  { key: "dueToday", label: "Vence hoje", color: "#c77a19" },
-  { key: "paid", label: "Pago", color: "#d7ded8" },
+  { key: "revenue", label: "Receita", color: "var(--color-cash-green)" },
+  { key: "expense", label: "Despesa", color: "var(--color-expense)" },
+  { key: "dueToday", label: "Vence hoje", color: "var(--color-warning)" },
+  { key: "paid", label: "Pago", color: "var(--color-border)" },
 ] as const;
 
 const TICK_COLORS = {

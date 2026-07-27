@@ -1,16 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, Switch, Typography, message } from "antd";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  BulbOutlined,
+  DesktopOutlined,
+  MoonOutlined,
+} from "@ant-design/icons";
+import { Card, Segmented, Switch, Typography, message } from "antd";
 
+import { TagsSettings } from "@/components/settings/tags-settings";
 import { ApiError } from "@/lib/api/client";
 import { users } from "@/lib/api/users";
 import { useUserPreferencesStore } from "@/lib/preferences/user-preferences";
+import { useTheme } from "@/lib/theme/theme-provider";
+import type { ThemePreference } from "@/lib/theme/theme-preference";
 
 const { Paragraph, Text, Title } = Typography;
 
+const THEME_OPTIONS: Array<{
+  label: string;
+  value: ThemePreference;
+  icon: ReactNode;
+}> = [
+  { label: "Claro", value: "light", icon: <BulbOutlined /> },
+  { label: "Escuro", value: "dark", icon: <MoonOutlined /> },
+  { label: "Sistema", value: "system", icon: <DesktopOutlined /> },
+];
+
 export function SettingsView() {
   const [saving, setSaving] = useState(false);
+  const { preference, setPreference } = useTheme();
   const hydrated = useUserPreferencesStore((state) => state.hydrated);
   const blockPastMonthMutations = useUserPreferencesStore(
     (state) => state.blockPastMonthMutations,
@@ -49,9 +68,27 @@ export function SettingsView() {
           Configurações
         </Title>
         <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 640 }}>
-          Preferências da conta sincronizadas com o servidor.
+          Preferências da conta e gestão de tags sincronizadas com o servidor.
         </Paragraph>
       </div>
+
+      <Card title="Aparência">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Text type="secondary" style={{ fontSize: 13, maxWidth: 640 }}>
+            Escolha entre tema claro, escuro ou seguir a preferência do sistema e do navegador.
+          </Text>
+          <Segmented
+            aria-label="Aparência do app"
+            options={THEME_OPTIONS.map((option) => ({
+              label: option.label,
+              value: option.value,
+              icon: option.icon,
+            }))}
+            value={preference}
+            onChange={(value) => setPreference(value as ThemePreference)}
+          />
+        </div>
+      </Card>
 
       <Card>
         <div
@@ -80,6 +117,14 @@ export function SettingsView() {
             onChange={(checked) => void handleToggle(checked)}
           />
         </div>
+      </Card>
+
+      <Card title="Tags">
+        <Paragraph type="secondary" style={{ marginBottom: 16, maxWidth: 640 }}>
+          Renomeie ou exclua tags em todas as transações. Novas tags continuam sendo criadas ao
+          salvar transações.
+        </Paragraph>
+        <TagsSettings />
       </Card>
     </div>
   );

@@ -1,6 +1,7 @@
 import { Space, Tag, Typography } from "antd";
 import type { CSSProperties } from "react";
 
+import { ColoredTag } from "@/components/ui/colored-tag";
 import { formatSignedCurrency } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import {
@@ -47,25 +48,6 @@ interface TransactionTagListProps {
   tags?: string[];
 }
 
-const TAG_COLORS = [
-  "green",
-  "blue",
-  "orange",
-  "magenta",
-  "cyan",
-  "purple",
-  "geekblue",
-  "volcano",
-] as const;
-
-function tagColor(tag: string): (typeof TAG_COLORS)[number] {
-  let hash = 0;
-  for (let index = 0; index < tag.length; index += 1) {
-    hash = (hash + tag.charCodeAt(index) * (index + 1)) % TAG_COLORS.length;
-  }
-  return TAG_COLORS[hash];
-}
-
 export function TransactionTagList({ tags }: TransactionTagListProps) {
   if (!tags?.length) {
     return <Text type="secondary">—</Text>;
@@ -74,9 +56,7 @@ export function TransactionTagList({ tags }: TransactionTagListProps) {
   return (
     <Space size={4} wrap>
       {tags.map((tag) => (
-        <Tag key={tag} color={tagColor(tag)}>
-          {tag}
-        </Tag>
+        <ColoredTag key={tag} name={tag} />
       ))}
     </Space>
   );

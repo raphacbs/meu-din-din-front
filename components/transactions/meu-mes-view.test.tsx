@@ -203,6 +203,24 @@ describe("MeuMesView", () => {
     });
   });
 
+  it("opens the invoice import flow from the hero action", async () => {
+    renderMeuMesView();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Importar fatura/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Importar fatura/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Enviar fatura em PDF")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: "Criar transação" })).not.toBeInTheDocument();
+  });
+
   it("shows API errors for extract requests", async () => {
     vi.mocked(transactions.extract).mockRejectedValue(new Error("Extract failed"));
 

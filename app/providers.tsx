@@ -1,12 +1,10 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { App, ConfigProvider } from "antd";
-import ptBR from "antd/locale/pt_BR";
 import { useState } from "react";
 
 import { SessionProvider } from "@/lib/auth/session-context";
-import { antdTheme } from "@/lib/theme/antd-theme";
+import { ThemeProvider } from "@/lib/theme/theme-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -23,11 +21,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider theme={antdTheme} locale={ptBR}>
-        <App>
-          <SessionProvider>{children}</SessionProvider>
-        </App>
-      </ConfigProvider>
+      <ThemeProvider>
+        <SessionProvider>{children}</SessionProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -1,22 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Col, Result, Row, Space, Spin, Typography } from "antd";
+import { Button, Col, Empty, Result, Row, Space, Spin, Typography } from "antd";
 
-import {
-  ProjectionPanel,
-  SummaryCard,
-  TransactionPreviewList,
-} from "@/components/dashboard/dashboard-panels";
-import { CashRibbon } from "@/components/dashboard/cash-ribbon";
-import { summarizeTransactions } from "@/lib/dashboard/summary";
+import { AnalyticsYearSelect } from "@/components/dashboard/analytics-year-select";
+import { ExpenseParetoChart } from "@/components/dashboard/expense-pareto-chart";
+import { MonthlyTotalsBarChart } from "@/components/dashboard/monthly-totals-bar-chart";
+import { ProjectionPanel } from "@/components/dashboard/dashboard-panels";
+import { TagRadarChart } from "@/components/dashboard/tag-radar-chart";
+import { analytics } from "@/lib/api/analytics";
 import { projections } from "@/lib/api/projections";
-import { transactions } from "@/lib/api/transactions";
 import { ApiError } from "@/lib/api/client";
-import { formatCurrency, formatSignedCurrency } from "@/lib/format/currency";
-import { formatDate } from "@/lib/format/date";
-import { formatTransactionStatus } from "@/lib/format/status";
+import { getDefaultAnalyticsYear } from "@/lib/dashboard/analytics-defaults";
 import { queryKeys } from "@/lib/query/keys";
 
 const { Paragraph, Title } = Typography;
@@ -31,15 +28,17 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export function DashboardView() {
   const queryClient = useQueryClient();
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [hasSyncedDefaultYear, setHasSyncedDefaultYear] = useState(false);
 
   const projectionQuery = useQuery({
     queryKey: queryKeys.projection,
     queryFn: () => projections.current(),
   });
 
-  const transactionsQuery = useQuery({
-    queryKey: queryKeys.transactions,
-    queryFn: () => transactions.list(),
+  const analyticsQuery = useQuery({
+    queryKey: queryKeys.analyticsDashboard(selectedYear),
+    queryFn: () => analytics.dashboard(selectedYear),
   });
 
   const recalculateMutation = useMutation({
@@ -49,9 +48,22 @@ export function DashboardView() {
     },
   });
 
-  const summary = transactionsQuery.data
-    ? summarizeTransactions(transactionsQuery.data)
-    : undefined;
+  useEffect(() => {
+    if (!analyticsQuery.data || hasSyncedDefaultYear) {
+      return;
+    }
+
+    const defaultYear = getDefaultAnalyticsYear(analyticsQuery.data.availableYears);
+
+    if (defaultYear != null && defaultYear !== selectedYear) {
+      setSelectedYear(defaultYear);
+    }
+
+    setHasSyncedDefaultYear(true);
+  }, [analyticsQuery.data, hasSyncedDefaultYear, selectedYear]);
+
+  const availableYears = analyticsQuery.data?.availableYears ?? [];
+  const hasNoYears = analyticsQuery.isSuccess && availableYears.length === 0;
 
   return (
     <Space direction="vertical" size={32} style={{ width: "100%" }}>
@@ -61,7 +73,7 @@ export function DashboardView() {
             Dashboard
           </Title>
           <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 640 }}>
-            Visão do caderno de caixa com saldo projetado, vencimentos e movimentações recentes.
+            Visão analítica do consumo anual com saldo projetado e gráficos por mês e tag.
           </Paragraph>
         </div>
         <Link href="/meu-mes?new=1">
@@ -84,103 +96,55 @@ export function DashboardView() {
         />
       </section>
 
-      {summary ? (
-        <section aria-label="Faixa de caixa e resumo">
-          <CashRibbon summary={summary} />
-        </section>
-      ) : null}
+      <section aria-label="Analytics anuais">
+        <Space direction="vertical" size={24} style={{ width: "100%" }}>
+          <Space align="center" style={{ width: "100%", justifyContent: "space-between" }} wrap>
+            <div>
+              <Title level={4} style={{ marginBottom: 4 }}>
+                Estatísticas do ano
+              </Title>
+              <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                Selecione o ano para atualizar todos os gráficos abaixo.
+              </Paragraph>
+            </div>
+            <AnalyticsYearSelect
+              availableYears={availableYears}
+              value={hasNoYears ? null : selectedYear}
+              onChange={setSelectedYear}
+            />
+          </Space>
 
-      {transactionsQuery.isLoading ? (
-        <Spin tip="Carregando resumo financeiro..." />
-      ) : transactionsQuery.isError ? (
-        <Result
-          status="error"
-          title="Resumo indisponível"
-          subTitle={getErrorMessage(
-            transactionsQuery.error,
-            "Não foi possível carregar as transações.",
-          )}
-          extra={<Button onClick={() => void transactionsQuery.refetch()}>Tentar novamente</Button>}
-        />
-      ) : summary ? (
-        <>
-          <section aria-label="Métricas auxiliares">
+          {analyticsQuery.isLoading ? (
+            <Spin tip="Carregando estatísticas..." />
+          ) : analyticsQuery.isError ? (
+            <Result
+              status="error"
+              title="Estatísticas indisponíveis"
+              subTitle={getErrorMessage(
+                analyticsQuery.error,
+                "Não foi possível carregar os gráficos de analytics.",
+              )}
+              extra={
+                <Button onClick={() => void analyticsQuery.refetch()}>Tentar novamente</Button>
+              }
+            />
+          ) : hasNoYears ? (
+            <Empty description="Não há transações para analisar. Cadastre movimentações para ver os gráficos." />
+          ) : analyticsQuery.data ? (
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} xl={5}>
-                <SummaryCard
-                  title="Receitas"
-                  value={formatCurrency(summary.revenueTotal)}
-                  description="Total de entradas ativas"
-                  tone="success"
-                />
-              </Col>
-              <Col xs={24} sm={12} xl={5}>
-                <SummaryCard
-                  title="Despesas"
-                  value={formatCurrency(summary.expenseTotal)}
-                  description="Total de saídas ativas"
-                  tone="danger"
-                />
-              </Col>
-              <Col xs={24} sm={12} xl={5}>
-                <SummaryCard
-                  title="Vence hoje"
-                  value={String(summary.dueToday.length)}
-                  description="Itens com vencimento hoje"
-                  tone="warning"
-                />
-              </Col>
-              <Col xs={24} sm={12} xl={5}>
-                <SummaryCard
-                  title="Atrasadas"
-                  value={String(summary.overdue.length)}
-                  description="Itens em atraso"
-                  tone="danger"
-                />
-              </Col>
-              <Col xs={24} sm={12} xl={4}>
-                <SummaryCard
-                  title="Pagas"
-                  value={String(summary.paid.length)}
-                  description="Itens quitados"
-                  tone="success"
-                />
-              </Col>
-            </Row>
-          </section>
-
-          <section aria-label="Atividade recente">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} lg={12}>
-                <TransactionPreviewList
-                  title="Próximos vencimentos"
-                  emptyLabel="Nenhum vencimento futuro registrado."
-                  transactions={summary.upcoming.slice(0, 5).map((transaction) => ({
-                    id: transaction.id,
-                    description: transaction.description,
-                    amountLabel: formatSignedCurrency(transaction.amount, transaction.type),
-                    metaLabel: transaction.dueDate
-                      ? formatDate(transaction.dueDate)
-                      : formatTransactionStatus(transaction.status),
-                  }))}
-                />
+              <Col xs={24}>
+                <MonthlyTotalsBarChart monthlyTotals={analyticsQuery.data.monthlyTotals} />
               </Col>
               <Col xs={24} lg={12}>
-                <TransactionPreviewList
-                  title="Liquidados recentes"
-                  emptyLabel="Nenhuma movimentação recente."
-                  transactions={summary.paid.slice(0, 5).map((transaction) => ({
-                    id: transaction.id,
-                    description: transaction.description,
-                    amountLabel: formatSignedCurrency(transaction.amount, transaction.type),
-                    metaLabel: formatTransactionStatus(transaction.status),
-                  }))}
-                />
+                <TagRadarChart year={selectedYear} tagRadar={analyticsQuery.data.tagRadar} />
+              </Col>
+              <Col xs={24} lg={12}>
+                <ExpenseParetoChart expensePareto={analyticsQuery.data.expensePareto} />
               </Col>
             </Row>
-          </section>
-        </>
-      ) : null}
+          ) : null}
+        </Space>
+      </section>
     </Space>
   );
 }

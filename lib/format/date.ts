@@ -1,4 +1,11 @@
+import dayjs, { type Dayjs } from "dayjs";
+
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Desabilita datas posteriores ao dia civil atual (para DatePicker). */
+export function disableFutureDates(current: Dayjs): boolean {
+  return current.isAfter(dayjs(), "day");
+}
 
 export function formatDate(isoDate: string): string {
   const datePart = isoDate.split("T")[0];
