@@ -29,7 +29,7 @@ describe("buildPeriodQueryString", () => {
 describe("replacePeriodInUrl", () => {
   it("replaces the URL with from/to query params", () => {
     const replace = vi.fn();
-    replacePeriodInUrl({ replace }, "/extract", "2024-07-01", "2024-07-31");
-    expect(replace).toHaveBeenCalledWith("/extract?from=2024-07-01&to=2024-07-31");
+    replacePeriodInUrl({ replace }, "/meu-mes", "2024-07-01", "2024-07-31");
+    expect(replace).toHaveBeenCalledWith("/meu-mes?from=2024-07-01&to=2024-07-31");
   });
 });
