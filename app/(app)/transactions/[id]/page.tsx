@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
 export async function generateStaticParams() {
-  return [];
+  // Com output: "export", [] quebra o build — precisa de ao menos um param.
+  return [{ id: "_" }];
 }
 
 export default function TransactionDetailPage() {
