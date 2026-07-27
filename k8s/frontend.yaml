@@ -30,7 +30,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: frontend
-          image: ghcr.io/raphacbs/meu-din-din-frontend:5ea7eb059db779a992af752fa689edc13fdcfc2b
+          image: ghcr.io/raphacbs/meu-din-din-frontend:b746a9be2aab2e4cd2a5d19081f68b3cdbd2f47e
           ports:
             - containerPort: 80
           resources:
