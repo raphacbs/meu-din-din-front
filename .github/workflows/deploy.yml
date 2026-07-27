@@ -33,7 +33,7 @@ jobs:
 
       - name: Build e Push da Imagem
         env:
-          NEXT_PUBLIC_API_URL: "/api"
+          NEXT_PUBLIC_API_URL: "/"
         run: |
           docker build --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
